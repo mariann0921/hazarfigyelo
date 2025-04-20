@@ -43,3 +43,4 @@ plt.ylabel('Jósolt árak (ezer $)')
 plt.title('Szórásdiagram: Valódi vs. jósolt')
 plt.grid(True)
 plt.show()
+#jol mukodik

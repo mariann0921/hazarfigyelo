@@ -1,0 +1,80 @@
+# --- Könyvtárak importálása ---
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+# Bemeneti adat:
+"""
+0:méret (m2)
+1:szobák száma
+2:emelet
+3:távolság a centrumtól (km)
+"""
+X = np.array([
+    [50, 2, 1, 10],
+    [60, 2, 2, 8],
+    [70, 3, 3, 7],
+    [80, 3, 4, 6],
+    [90, 4, 5, 5],
+    [100, 4, 6, 4],
+    [110, 5, 7, 3],
+    [120, 5, 8, 2]
+])
+#célérték
+y = np.array([150, 170, 200, 230, 260, 290, 320, 350])
+y = y.reshape(-1, 1)
+
+# --- Skálázás ---
+X_scaler = StandardScaler()
+X_scaled = X_scaler.fit_transform(X)
+
+y_scaler = MinMaxScaler()
+y_scaled = y_scaler.fit_transform(y)
+
+# --- Neurális háló létrehozása (bővítve) ---
+model = Sequential()
+model.add(Dense(16, activation='relu', input_shape=(4,))) # 16 mesterséges „idegsejt”, mind a 4 bemenetet figyeli.
+model.add(Dense(8, activation='relu')) #A második réteg: 8 neuron, tovább dolgozik az információval.
+model.add(Dense(1)) #A harmadik réteg: 1 értéket ad vissza → a jósolt ár.
+
+model.compile(optimizer='adam', loss='mse')
+
+# --- Tanítás ---
+history = model.fit(X_scaled, y_scaled, epochs=1000, verbose=0)
+
+# --- Jóslás meglévő adatokra ---
+y_pred_scaled = model.predict(X_scaled)
+y_pred = y_scaler.inverse_transform(y_pred_scaled)
+
+# --- Jóslás új házra ---
+uj_haz = np.array(np.array([
+    [85, 3, 2, 6],
+    [95, 4, 5, 3],
+    [70, 2, 1, 8]
+]))
+uj_haz_scaled = X_scaler.transform(uj_haz)
+uj_haz_pred_scaled = model.predict(uj_haz_scaled)
+uj_haz_pred = y_scaler.inverse_transform(uj_haz_pred_scaled)
+for i in range(len(uj_haz)):
+    print(f"A becsült ár az új házra ({uj_haz[i]}): {uj_haz_pred[i][0]:.2f} ezer dollár")
+
+
+# --- Veszteség alakulása ---
+plt.plot(history.history['loss'])
+plt.title('Tanulási veszteség (Loss)')
+plt.xlabel('Epizód')
+plt.ylabel('MSE')
+plt.grid(True)
+plt.show()
+
+# --- Valódi vs jósolt árak ---
+plt.plot(y, label='Valódi árak', marker='o')
+plt.plot(y_pred, label='Jósolt árak (NN)', marker='x')
+plt.xlabel('Adatminta indexe')
+plt.ylabel('Ár (ezer dollár)')
+plt.title('Valódi vs. jósolt házárak (neurális háló)')
+plt.legend()
+plt.grid(True)
+plt.show()
